@@ -1,6 +1,8 @@
 import numpy as np
 import timeit
 from sklearn.preprocessing import PolynomialFeatures
+import matplotlib.pyplot as plt
+
 
 # 1. Генеруємо 100 випадкових значень ознак x1, x2
 
@@ -239,4 +241,74 @@ time = timeit.timeit(
 )
 print("Batch Gradient Descent average time:", time / 5)
 
+# 5. Підбір оптимальної кількісті ітерацій для кожного з варіантів метода
 
+def find_optimal_iterations(losses, threshold=1e-6):
+    """
+    Повертає номер ітерації, після якої зміни loss стають дуже малими.
+    threshold — мінімальна зміна, яку вважаємо суттєвою.
+    """
+    for i in range(1, len(losses)):
+        if abs(losses[i] - losses[i-1]) < threshold:
+            return i
+    return len(losses)
+
+# 5.1. Batch Gradient Descent
+w_gd, losses_gd = polynomial_regression_gradient_descent(
+    X_poly, y, lr=0.001, n_iters=3000
+)
+
+opt_gd = find_optimal_iterations(losses_gd)
+print("Optimal GD iterations:", opt_gd)
+
+plt.plot(losses_gd)
+plt.title("GD Loss Curve")
+plt.show()
+
+# 5.2. SGD
+w_sgd, losses_sgd = polynomial_regression_SGD(
+    X_poly, y, lr=0.001, n_iters=200, batch_size=1
+)
+
+opt_sgd = find_optimal_iterations(losses_sgd, threshold=1e-4)
+print("Optimal SGD iterations:", opt_sgd)
+
+plt.plot(losses_sgd)
+plt.title("SGD Loss Curve")
+plt.show()
+
+# 5.3 RMSProp
+w_rms, losses_rms = polynomial_regression_rmsprop(
+    X_poly, y, lr=0.001, n_iters=3000
+)
+
+opt_rms = find_optimal_iterations(losses_rms)
+print("Optimal RMSProp iterations:", opt_rms)
+
+plt.plot(losses_rms)
+plt.title("RMSProp Loss Curve")
+plt.show()
+
+# 5.4. Adam
+w_adam, losses_adam = polynomial_regression_adam(
+    X_poly, y, lr=0.01, n_iters=3000
+)
+
+opt_adam = find_optimal_iterations(losses_adam)
+print("Optimal Adam iterations:", opt_adam)
+
+plt.plot(losses_adam)
+plt.title("Adam Loss Curve")
+plt.show()
+
+# 5.5. Nadam
+w_nadam, losses_nadam = polynomial_regression_nadam(
+    X_poly, y, lr=0.01, n_iters=3000
+)
+
+opt_nadam = find_optimal_iterations(losses_nadam)
+print("Optimal Nadam iterations:", opt_nadam)
+
+plt.plot(losses_nadam)
+plt.title("Nadam Loss Curve")
+plt.show()
