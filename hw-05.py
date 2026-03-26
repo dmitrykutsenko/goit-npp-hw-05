@@ -30,3 +30,153 @@ X_poly = poly.fit_transform(X)
 print("Original X shape:", X.shape)
 print("Polynomial X shape:", X_poly.shape)
 print("Feature names:", poly.get_feature_names_out())
+
+
+# 3. Базові допоміжні функції
+
+def predict(X, w):
+    return X @ w
+
+def mse_loss(X, y, w):
+    y_pred = predict(X, w)
+    return np.mean((y_pred - y) ** 2)
+
+def mse_gradient(X, y, w):
+    n = X.shape[0]
+    y_pred = predict(X, w)
+    return (2.0 / n) * X.T @ (y_pred - y)
+
+# 3.1. Звичайний batch gradient descent
+def polynomial_regression_gradient_descent(
+    X, y, 
+    lr=0.01, 
+    n_iters=1000
+):
+    n_samples, n_features = X.shape
+    w = np.zeros(n_features)
+    losses = []
+
+    for i in range(n_iters):
+        grad = mse_gradient(X, y, w)
+        w -= lr * grad
+        loss = mse_loss(X, y, w)
+        losses.append(loss)
+    return w, losses
+
+# 3.2. Stochastic Gradient Descent (SGD, з mini-batch)
+def polynomial_regression_SGD(
+    X, y, 
+    lr=0.01, 
+    n_iters=1000, 
+    batch_size=1,
+    shuffle=True
+):
+    n_samples, n_features = X.shape
+    w = np.zeros(n_features)
+    losses = []
+
+    for it in range(n_iters):
+        if shuffle:
+            indices = np.random.permutation(n_samples)
+            X = X[indices]
+            y = y[indices]
+
+        for start in range(0, n_samples, batch_size):
+            end = start + batch_size
+            X_batch = X[start:end]
+            y_batch = y[start:end]
+
+            y_pred = X_batch @ w
+            grad = (2.0 / X_batch.shape[0]) * X_batch.T @ (y_pred - y_batch)
+            w -= lr * grad
+
+        loss = mse_loss(X, y, w)
+        losses.append(loss)
+    return w, losses
+
+# 3.3. RMSProp
+def polynomial_regression_rmsprop(
+    X, y, 
+    lr=0.01, 
+    n_iters=1000, 
+    beta=0.9, 
+    eps=1e-8
+):
+    n_samples, n_features = X.shape
+    w = np.zeros(n_features)
+    Eg2 = np.zeros(n_features)  # накопичена середня квадр. градієнта
+    losses = []
+
+    for i in range(n_iters):
+        grad = mse_gradient(X, y, w)
+
+        Eg2 = beta * Eg2 + (1 - beta) * (grad ** 2)
+        w -= lr * grad / (np.sqrt(Eg2) + eps)
+
+        loss = mse_loss(X, y, w)
+        losses.append(loss)
+    return w, losses
+
+# 3.4. Adam
+def polynomial_regression_adam(
+    X, y, 
+    lr=0.01, 
+    n_iters=1000, 
+    beta1=0.9, 
+    beta2=0.999, 
+    eps=1e-8
+):
+    n_samples, n_features = X.shape
+    w = np.zeros(n_features)
+    m = np.zeros(n_features)
+    v = np.zeros(n_features)
+    losses = []
+
+    for t in range(1, n_iters + 1):
+        grad = mse_gradient(X, y, w)
+
+        m = beta1 * m + (1 - beta1) * grad
+        v = beta2 * v + (1 - beta2) * (grad ** 2)
+
+        m_hat = m / (1 - beta1 ** t)
+        v_hat = v / (1 - beta2 ** t)
+
+        w -= lr * m_hat / (np.sqrt(v_hat) + eps)
+
+        loss = mse_loss(X, y, w)
+        losses.append(loss)
+    return w, losses
+
+# 3.5. Nadam (Nesterov-accelerated Adam)
+def polynomial_regression_nadam(
+    X, y, 
+    lr=0.01, 
+    n_iters=1000, 
+    beta1=0.9, 
+    beta2=0.999, 
+    eps=1e-8
+):
+    n_samples, n_features = X.shape
+    w = np.zeros(n_features)
+    m = np.zeros(n_features)
+    v = np.zeros(n_features)
+    losses = []
+
+    for t in range(1, n_iters + 1):
+        grad = mse_gradient(X, y, w)
+
+        m = beta1 * m + (1 - beta1) * grad
+        v = beta2 * v + (1 - beta2) * (grad ** 2)
+
+        m_hat = m / (1 - beta1 ** t)
+        v_hat = v / (1 - beta2 ** t)
+
+        # Nadam update: Nesterov-style корекція моменту
+        nesterov_m = beta1 * m_hat + (1 - beta1) * grad / (1 - beta1 ** t)
+
+        w -= lr * nesterov_m / (np.sqrt(v_hat) + eps)
+
+        loss = mse_loss(X, y, w)
+        losses.append(loss)
+    return w, losses
+
