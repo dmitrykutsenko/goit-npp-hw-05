@@ -1,4 +1,6 @@
 import numpy as np
+import timeit
+from sklearn.preprocessing import PolynomialFeatures
 
 # 1. Генеруємо 100 випадкових значень ознак x1, x2
 
@@ -31,6 +33,20 @@ print("Original X shape:", X.shape)
 print("Polynomial X shape:", X_poly.shape)
 print("Feature names:", poly.get_feature_names_out())
 
+# Перед п.3 потрібно спочатку провести генерацію данних для реалізації вимірів у п.4
+
+np.random.seed(42)
+
+X = np.random.uniform(-5, 5, size=(100, 2))
+x1 = X[:, 0]
+x2 = X[:, 1]
+
+y = 4*x1**2 + 5*x2**2 - 2*x1*x2 + 3*x1 - 6*x2
+
+poly = PolynomialFeatures(degree=2, include_bias=True)
+X_poly = poly.fit_transform(X)
+
+print(X_poly.shape)
 
 # 3. Базові допоміжні функції
 
@@ -179,4 +195,48 @@ def polynomial_regression_nadam(
         loss = mse_loss(X, y, w)
         losses.append(loss)
     return w, losses
+
+
+# 4. Вимірювання часу роботи методів градієнтного спуску
+
+# 4.1. Batch Gradient Descent
+time = timeit.timeit(
+    stmt="polynomial_regression_gradient_descent(X_poly, y, lr=0.001, n_iters=2000)",
+    globals=globals(),
+    number=5
+)
+print("Batch Gradient Descent average time:", time / 5)
+
+# 4.2. Stochastic Gradient Descent (SGD)
+time = timeit.timeit(
+    stmt="polynomial_regression_SGD(X_poly, y, lr=0.001, n_iters=50, batch_size=1)",
+    globals=globals(),
+    number=5
+)
+print("Batch Gradient Descent average time:", time / 5)
+
+# 4.3. RMSProp
+time = timeit.timeit(
+    stmt="polynomial_regression_rmsprop(X_poly, y, lr=0.001, n_iters=2000)",
+    globals=globals(),
+    number=5
+)
+print("Batch Gradient Descent average time:", time / 5)
+
+# 4.4. Adam
+time = timeit.timeit(
+    stmt="polynomial_regression_adam(X_poly, y, lr=0.01, n_iters=2000)",
+    globals=globals(),
+    number=5
+)
+print("Batch Gradient Descent average time:", time / 5)
+
+# 4.5. Nadam
+time = timeit.timeit(
+    stmt="polynomial_regression_nadam(X_poly, y, lr=0.01, n_iters=2000)",
+    globals=globals(),
+    number=5
+)
+print("Batch Gradient Descent average time:", time / 5)
+
 
